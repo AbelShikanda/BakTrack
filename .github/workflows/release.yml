@@ -1,3 +1,12 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -22,7 +31,7 @@ jobs:
       - name: Run standard-version
         run: npm run release
 
-      # Step 5: Set up Git identity before committing
+      # Step 5: Set up Git identity (for CI environment)
       - name: Set up Git identity
         run: |
           git config --global user.name "github-actions[bot]"
@@ -34,7 +43,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 7: Publish to npm
+      # Step 6: Publish
       - name: Publish to npm
         run: npm publish
         env:
