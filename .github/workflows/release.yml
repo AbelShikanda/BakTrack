@@ -30,9 +30,9 @@ jobs:
       # Step 4: Set up Git identity (for CI environment)
       - name: Set up Git identity
         run: |
-          git remote set-url origin https://abelshikanda:${{ secrets.GH_TOKEN }}@github.com/AbelShikanda/BakTrack.git
-          git config --global user.name "abel"
-          git config --global user.email "abelshikanda3@gmail.com"
+          git remote set-url origin https://github-actions:${{ secrets.GH_TOKEN }}@github.com/AbelShikanda/BakTrack.git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       # Step 5: Run standard-version to bump version and create changelog
       - name: Run standard-version
@@ -43,8 +43,9 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GH_TOKEN }}
-          github_url: https://github.com/AbelShikanda/BakTrack.git
+          github_url: https://github.com
           directory: .
+          push_to_submodules: on-demand
         env:
           NPM_CONFIG_USERCONFIG: /home/runner/work/_temp/.npmrc
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
