@@ -31,7 +31,13 @@ jobs:
       - name: Run standard-version
         run: npm run release
 
-      # Step 5: Push version tags and commits back to GitHub
+      # Step 5: Set up Git identity (for CI environment)
+      - name: Set up Git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Step 6: Push version tags and commits back to GitHub
       - name: Push changes
         uses: ad-m/github-push-action@v0.6.0
         with:
