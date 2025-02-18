@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Get the current directory as the restore target
+TARGET_DIR=$(pwd)
+
+# Read backup destination from .bak/.bakconfig
+if [ -f "$TARGET_DIR/.bak/.bakconfig" ]; then
+    source "$TARGET_DIR/.bak/.bakconfig"
+else
+    echo "Error: No .bak/.bakconfig found! Run 'backup init' first."
+    exit 1
+fi
+
+# Check if backup destination exists
+if [ ! -d "$BACKUP_DEST" ]; then
+    echo "Error: Backup destination does not exist: $BACKUP_DEST"
+    exit 1
+fi
+
+# Log file path
+LOG_FILE=~/BackupVersionControl/restore.log
+
+# Perform dry run
+echo "Running dry run..."
+# rsync -av --dry-run "$BACKUP_DEST/" "$TARGET_DIR/"
+rsync -av --dry-run --no-perms --omit-dir-times "$BACKUP_DEST/" "$TARGET_DIR/"
+
+# Ask for confirmation before restoring
+read -p "Proceed with restore? (y/N): " confirm
+if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+    # Log start time
+    echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Restore Started" | tee -a "$LOG_FILE"
+    echo "Source: $BACKUP_DEST" | tee -a "$LOG_FILE"
+    echo "Destination: $TARGET_DIR" | tee -a "$LOG_FILE"
+    echo "-------------------------------------" | tee -a "$LOG_FILE"
+    
+    # Perform the actual restore
+    # sudo -u "$BACKUP_USER" rsync -av "$BACKUP_DEST/" "$TARGET_DIR/" 2>&1 | tee -a "$LOG_FILE"
+    sudo -u "$BACKUP_USER" rsync -av --no-perms --omit-dir-times "$BACKUP_DEST/" "$TARGET_DIR/" 2>&1 | tee -a "$LOG_FILE"
+
+    echo "Restore completed: $BACKUP_DEST → $TARGET_DIR" | tee -a "$LOG_FILE"
+    echo "-------------------------------------" | tee -a "$LOG_FILE"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Restore Completed" | tee -a "$LOG_FILE"
+else
+    echo "Restore canceled."
+fi

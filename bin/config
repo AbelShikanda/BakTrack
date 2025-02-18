@@ -1,0 +1,204 @@
+#!/bin/bash
+
+# Get the current directory (source) and backup destination directory
+INIT_DIR=$(pwd)
+BAK_DIR="$INIT_DIR/.bak"
+CONFIG_FILE="$BAK_DIR/.bakconfig"
+
+# Help function for config
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: bak config <command> [arguments]"
+    echo
+    echo "Configuration Commands:"
+    echo "  bak config set device <label>   - Set the device label (e.g., MyBackupDriveName)"
+    echo "  bak config set mount <path>     - Set the mount point (e.g., /media/backup)"
+    echo "  bak config create backup        - Automatically create backup destination"
+    echo "  bak config list                 - List the current backup user"
+    echo "  bak config remove               - Remove the backup user"
+    echo "  bak config <username>           - Set a new backup user"
+    echo "  bak config show                 - Show the current configuration"
+    exit 0
+fi
+
+# Ensure a .bakconfig file exists
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: No .bakconfig file found in the current directory. Cannot proceed."
+    exit 1
+fi
+
+# Load the current backup destination
+source "$CONFIG_FILE"
+
+if [ -z "$BACKUP_DEST" ]; then
+    echo "Error: BACKUP_DEST is not set in $CONFIG_FILE."
+    exit 1
+fi
+
+DEST_CONFIG_FILE="$BACKUP_DEST/.bak/.bakconfig"
+
+# Function to remove BACKUP_USER
+remove_backup_user() {
+    sed -i '/^BACKUP_USER=/d' "$CONFIG_FILE" && echo "Backup user removed from $CONFIG_FILE"
+
+    if [ -f "$DEST_CONFIG_FILE" ] && [ -f "$BACKUP_DEST/.bak/.bakconfig" ]; then
+        sed -i '/^BACKUP_USER=/d' "$DEST_CONFIG_FILE"
+        echo "Backup user removed from $DEST_CONFIG_FILE"
+        rsync -av "$CONFIG_FILE" "$DEST_CONFIG_FILE"
+    fi
+
+    if [ -f ~/.backupuser ]; then
+        rm -f ~/.backupuser && echo "Backup user removed from global config."
+    fi
+}
+
+# Function to list backup user
+list_backup_user() {
+    [[ -f "$CONFIG_FILE" ]] && echo "Local backup user: $(grep BACKUP_USER "$CONFIG_FILE" | cut -d '=' -f2 || echo "None")"
+    [[ -f "$DEST_CONFIG_FILE" ]] && echo "Destination backup user: $(grep BACKUP_USER "$DEST_CONFIG_FILE" | cut -d '=' -f2 || echo "None")"
+    [[ -f ~/.backupuser ]] && echo "Global backup user: $(grep BACKUP_USER ~/.backupuser | cut -d '=' -f2 || echo "None")"
+}
+
+# Function to update backup user
+update_backup_user() {
+    # Update the user in the source configuration
+    sed -i '/^BACKUP_USER=/d' "$CONFIG_FILE"
+    echo "BACKUP_USER=$1" >> "$CONFIG_FILE"
+    echo "User set in $CONFIG_FILE"
+
+    # Always update the global backup user
+    echo "BACKUP_USER=$1" > ~/.backupuser
+    echo "Backup user set globally to $1"
+
+    # If destination exists, update the destination config as well
+    if [ -f "$DEST_CONFIG_FILE" ] && [ -f "$BACKUP_DEST/.bak/.bakconfig" ]; then
+        sed -i '/^BACKUP_USER=/d' "$DEST_CONFIG_FILE"
+        echo "BACKUP_USER=$1" >> "$DEST_CONFIG_FILE"
+        echo "User set in $DEST_CONFIG_FILE"
+
+        # Synchronize the updated source config to the destination
+        rsync -av "$CONFIG_FILE" "$DEST_CONFIG_FILE"
+    else
+        echo "Warning: Backup destination is missing or incomplete. Skipping update for destination config."
+    fi
+}
+
+# Function to check if mount point is valid and device is mounted
+check_mount_point() {
+    if [ ! -d "$MOUNT_POINT" ]; then
+        echo "Error: Mount point $MOUNT_POINT does not exist."
+        exit 1
+    fi
+
+    if ! mount | grep -q "$MOUNT_POINT"; then
+        echo "Error: No device is mounted at $MOUNT_POINT."
+        exit 1
+    fi
+}
+
+# Command Handling
+case "$1" in
+    remove)
+        remove_backup_user
+        ;;
+    list)
+        list_backup_user
+        ;;
+    show)
+        [[ -f "$CONFIG_FILE" ]] && cat "$CONFIG_FILE" || echo "No configuration found."
+        ;;
+    set)
+        if [[ -z "$2" || -z "$3" ]]; then
+            echo "Usage: bak config set {device|mount|backup} <value>"
+            exit 1
+        fi
+
+        case "$2" in
+            device)
+                # Ensure mount point is set before setting device label
+                if [ -z "$MOUNT_POINT" ]; then
+                    echo "Error: Mount point is not set. Use 'bak config set mount <path>' first."
+                    exit 1
+                fi
+                check_mount_point
+
+                # Check if the device name is actually a mounted device
+                DEVICE_NAME="$3"
+                if ! mount | grep -q "$DEVICE_NAME"; then
+                    echo "Error: The device name '$DEVICE_NAME' is not a valid mounted device. Check the name of your device and try again"
+                    exit 1
+                fi
+
+                # If the device name is valid, update the device label
+                sed -i "s|^DEVICE_LABEL=.*|DEVICE_LABEL=\"$DEVICE_NAME\"|" "$CONFIG_FILE"
+                echo "Device label set to $DEVICE_NAME"
+                ;;
+            mount)
+                sed -i "s|^MOUNT_POINT=.*|MOUNT_POINT=\"$3\"|" "$CONFIG_FILE"
+                echo "Updated mount point to $3"
+                ;;
+            *)
+                echo "Invalid option. Use: device, mount, or backup"
+                exit 1
+                ;;
+        esac
+        echo "Updated $2 to $3"
+        ;;
+    create)
+        if [[ "$2" == "backup" ]]; then
+            # Ensure required variables are set
+            if [ -z "$MOUNT_POINT" ]; then
+                echo "Error: Mount point is not set. Use 'bak config set mount <path/to/backupDevice>' first."
+                exit 1
+            fi
+            if [ -z "$DEVICE_LABEL" ]; then
+                echo "Error: Device label is not set. Use 'bak config set device <label>' first."
+                exit 1
+            fi
+            if [ -z "$BACKUP_USER" ]; then
+                echo "Error: Backup user is not set. Use 'bak config <user>' first."
+                exit 1
+            fi
+
+            # Check if the mount point is valid
+            EXPECTED_DEVICE=$(lsblk -no LABEL,MOUNTPOINT | awk -v label="$DEVICE_LABEL" '$1 == label {print $2}')
+
+            if [ -z "$EXPECTED_DEVICE" ] || [[ "$EXPECTED_DEVICE" != "$MOUNT_POINT"* ]]; then
+                echo "Error: The expected backup device ($DEVICE_LABEL) is not mounted at $MOUNT_POINT."
+                exit 1
+            fi
+
+            # Define backup path
+            BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$(basename "$INIT_DIR")"
+
+            # Update config file with backup destination
+            sed -i "s|^BACKUP_DEST=.*|BACKUP_DEST=\"$BACKUP_PATH\"|" "$CONFIG_FILE"
+            echo "Created backup destination: $BACKUP_PATH"
+
+            # Ensure backup directory exists
+            mkdir -p "$BACKUP_PATH"
+
+            # Copy configuration files (.bak folder and .bakignore)
+            if [ -d "$INIT_DIR/.bak" ]; then
+                cp -r "$INIT_DIR/.bak" "$BACKUP_PATH/"
+            fi
+
+            if [ -f "$INIT_DIR/.bakignore" ]; then
+                cp "$INIT_DIR/.bakignore" "$BACKUP_PATH/"
+            fi
+
+            echo "Backup structure initialized at $BACKUP_PATH"
+        else
+            echo "Invalid create command. Usage: bak config create backup"
+            exit 1
+        fi
+        ;;
+    *)
+        if [[ -z "$1" ]]; then
+            echo "Usage: bak config user <name> | remove | list | show | set {device|mount|backup} <value> | create backup"
+            exit 1
+        fi
+        update_backup_user "$1"
+        ;;
+esac
+
+exit 0

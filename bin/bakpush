@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Get the current directory
+SOURCE_DIR=$(pwd)
+
+# Read backup destination from .bak/.bakconfig
+if [ -f "$SOURCE_DIR/.bak/.bakconfig" ]; then
+    source "$SOURCE_DIR/.bak/.bakconfig"
+else
+    echo "Error: No .bak/.bakconfig found! Run 'backup init' first."
+    exit 1
+fi
+
+# Ensure destination exists
+mkdir -p "$BACKUP_DEST"
+
+# Read backup user from .backupuser (Local first, then Global)
+if [ -f "$SOURCE_DIR/.bak/.bakconfig" ]; then
+    BACKUP_USER=$(grep BACKUP_USER "$SOURCE_DIR/.bak/.bakconfig" | cut -d '=' -f2)
+elif [ -f ~/.backupuser ]; then
+    source ~/.backupuser
+else
+    echo "Error: No backup user set! Run 'bakconfig <username>' first."
+    exit 1
+fi
+
+# Ensure backup user is set
+if [ -z "$BACKUP_USER" ]; then
+    echo "Error: Backup user is empty. Please set a user using 'bakconfig <username>'."
+    exit 1
+fi
+
+# Log file path
+LOG_FILE=$SOURCE_DIR/backup.log
+
+# Ensure log file exists (optional, for logging clarity)
+touch "$LOG_FILE"
+
+# Dry run first
+echo "Running dry run..."
+rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/"
+
+# Confirm before actual push
+read -p "Proceed with backup? (y/N): " confirm
+if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+    # Add timestamp and log header
+    echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Backup Started" | tee -a "$LOG_FILE"
+    echo "Source: $SOURCE_DIR" | tee -a "$LOG_FILE"
+    echo "Destination: $BACKUP_DEST" | tee -a "$LOG_FILE"
+    echo "User: $BACKUP_USER" | tee -a "$LOG_FILE"
+    echo "-------------------------------------" | tee -a "$LOG_FILE"
+    # Run rsync and format output
+    sudo -u "$BACKUP_USER" rsync -av --delete --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" 2>&1 | tee -a "$LOG_FILE"
+    echo "Backup completed: $SOURCE_DIR → $BACKUP_DEST (User: $BACKUP_USER)"
+    # Log completion time
+    echo -e "-------------------------------------" | tee -a "$LOG_FILE"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Backup Completed" | tee -a "$LOG_FILE"
+else
+    echo "Backup canceled."
+fi

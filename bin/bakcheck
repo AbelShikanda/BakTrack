@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Ensure CHECK_DIR is properly set
+CHECK_DIR=$(pwd)
+
+# Safety check to prevent scanning system files
+if [[ -z "$CHECK_DIR" || "$CHECK_DIR" == "/" ]]; then
+    echo "Error: CHECK_DIR is not set or is root (/), aborting!"
+    exit 1
+fi
+
+echo "CHECK_DIR is set to: $CHECK_DIR"
+
+# Read backup destination from .bak/.bakconfig
+if [ -f "$CHECK_DIR/.bak/.bakconfig" ]; then
+    source "$CHECK_DIR/.bak/.bakconfig"
+else
+    echo "Error: No .bak/.bakconfig found! Run 'backup init' first."
+    exit 1
+fi
+
+# Check if backup destination exists
+if [ ! -d "$BACKUP_DEST" ]; then
+    echo "Error: Backup destination does not exist!"
+    exit 1
+fi
+
+# Ensure .bakignore exists before using it
+EXCLUDE_OPTION=""
+if [ -f "$CHECK_DIR/.bakignore" ]; then
+    EXCLUDE_OPTION="--exclude-from=$CHECK_DIR/.bakignore"
+fi
+
+# Show differences between local and backup with structured output
+echo -e "\nComparing: $CHECK_DIR ↔ $BACKUP_DEST\n"
+
+rsync -rcn --delete --itemize-changes $EXCLUDE_OPTION "$CHECK_DIR/" "$BACKUP_DEST/" | awk '
+    /^deleting / {print "\033[31m[DELETED] " substr($0,10) "\033[0m"; next}  
+    /^[cd]/ {print "\033[33m[NEW DIRECTORY] " substr($0,3) "\033[0m"; next}    
+    /^>/ {print "\033[32m[UPDATED FILE] " substr($0,3) "\033[0m"; next}       
+    /^\+/ {print "\033[36m[NEW FILE] " substr($0,3) "\033[0m"; next}           
+    /^\*/ {print "\033[34m[FILE PERMISSION CHANGED] " substr($0,3) "\033[0m"; next}  
+'
+
+echo -e "\nAbove are the detected differences."

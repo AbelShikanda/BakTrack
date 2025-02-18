@@ -11,3 +11,57 @@
 
 pkg/
 src/
+
+# Node.js dependencies
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn.lock
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Backup and config files
+.bak/
+.bakconfig
+.backupuser
+backup.log
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Build & Distribution files
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Git-specific
+*.orig
+*.rej
+
+
+backup.log
+nohup.out
+restore.log
+notes
+usb_monitor.sh

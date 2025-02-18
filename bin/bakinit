@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Get the current directory (source) and backup destination directory
+INIT_DIR=$(pwd)
+
+# Create .bak folder if it doesn't exist
+BAK_DIR="$INIT_DIR/.bak"
+if [ ! -d "$BAK_DIR" ]; then
+    mkdir "$BAK_DIR"
+fi
+
+CONFIG_FILE="$BAK_DIR/.bakconfig"
+BAKIGNORE_FILE="$INIT_DIR/.bakignore"
+
+# Create .bakconfig file at the source directory if it doesn't exist
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "DEVICE_LABEL=\"\"" > "$CONFIG_FILE"
+    echo "MOUNT_POINT=\"\"" >> "$CONFIG_FILE"
+    echo "BACKUP_DEST=\"/path/to/backup\"" >> "$CONFIG_FILE"
+    echo "BACKUP_USER=\"\"" >> "$CONFIG_FILE"
+fi
+
+# Create .bakignore file at the source directory if it doesn't exist
+if [ ! -f "$BAKIGNORE_FILE" ]; then
+    cat > "$BAKIGNORE_FILE" <<EOL
+node_modules/
+vendor/
+.env
+storage/logs/
+tmp/
+.DS_Store
+.idea/
+usr/share/*
+/usr/share/*
+EOL
+fi
+
+echo "Initialization complete. Configuration files created. run bak config -h to configure"

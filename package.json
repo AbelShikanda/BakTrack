@@ -1,0 +1,28 @@
+{
+	"name": "baktrack",
+	"version": "1.0.0",
+	"description": "A local versioning tool to help structure your local backups",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "node index.js",
+		"release": "standard-version"
+	},
+	"keywords": [
+		"backup",
+		"cli",
+		"versioning"
+	],
+	"author": "Abel Shikanda",
+	"license": "ISC",
+	"bin": {
+		"bak": "./bin/bak",
+		"bakpush": "./bin/bakpush",
+		"bakpull": "./bin/bakpull",
+		"bakcheck": "./bin/bakcheck",
+		"bakinit": "./bin/bakinit"
+	},
+	"devDependencies": {
+		"standard-version": "^9.5.0"
+	}
+}

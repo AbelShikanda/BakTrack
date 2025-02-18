@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Help function for bak
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: bak {push|pull|check|config}"
+    echo
+    echo "Commands:"
+    echo "  push      - Pushes data to the backup location"
+    echo "  pull      - Retrieves data from the backup location"
+    echo "  check     - Checks the backup status"
+    echo "  config    - Manage backup configurations (run 'bak config -h' for more info)"
+    exit 0
+fi
+
+case "$1" in
+  track)
+    ./bakpush
+    ;;
+  restore)
+    ./bakpull
+    ;;
+  check)
+    ./bakcheck
+    ;;
+  config)
+    shift
+    ./config "$@" 
+    ;;
+  init)
+    shift
+    ./bakinit "$@"
+    ;;
+  *)
+    echo "Usage: bak {-h|--help}"
+    exit 1
+    ;;
+esac
