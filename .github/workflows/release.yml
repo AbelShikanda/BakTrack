@@ -43,7 +43,7 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GH_TOKEN }}
-          github_url: https://abelshikanda:${{ secrets.GH_TOKEN }}@github.com/AbelShikanda/BakTrack.git
+          github_url: https://github.com/AbelShikanda/BakTrack.git
           directory: .
         env:
           NPM_CONFIG_USERCONFIG: /home/runner/work/_temp/.npmrc
