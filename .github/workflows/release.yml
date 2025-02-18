@@ -30,7 +30,6 @@ jobs:
       # Step 4: Set up Git identity (for CI environment)
       - name: Set up Git identity
         run: |
-          # git remote set-url origin https://github-actions:${{ secrets.GH_TOKEN }}@github.com/AbelShikanda/BakTrack.git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 

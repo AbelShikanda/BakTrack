@@ -18,7 +18,7 @@ You can install **BakTrack** using **npm** (recommended) or manually from GitHub
 
 Ensure you have **Node.js** (>=14) and **npm** installed. Then run:
 
-npm install -g baktrack
+npm i baktrack
 
 This installs **BakTrack** globally, allowing you to use it from anywhere.
 

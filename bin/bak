@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Get the absolute path of the script
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+
 # Help function for bak
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Usage: bak {push|pull|check|config}"
@@ -14,21 +17,21 @@ fi
 
 case "$1" in
   track)
-    ./bakpush
+    "$SCRIPT_DIR/bakpush"
     ;;
   restore)
-    ./bakpull
+    "$SCRIPT_DIR/bakpull"
     ;;
   check)
-    ./bakcheck
+    "$SCRIPT_DIR/bakcheck"
     ;;
   config)
     shift
-    ./config "$@" 
+    "$SCRIPT_DIR/config" "$@" 
     ;;
   init)
     shift
-    ./bakinit "$@"
+    "$SCRIPT_DIR/bakinit" "$@"
     ;;
   *)
     echo "Usage: bak {-h|--help}"
