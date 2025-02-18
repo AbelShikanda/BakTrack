@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## 1.1.0 (2025-02-18)
+
+
+### Features
+
+* **config:** improved configuration structure ([2290a26](https://github.com/AbelShikanda/BakTrack/commit/2290a262d1e9df207d22f1bd22482c2c003136c7))
+
 ### 1.0.4 (2025-02-18)
 
 
