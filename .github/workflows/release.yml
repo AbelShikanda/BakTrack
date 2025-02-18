@@ -37,7 +37,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 6: Publish to npm
+      # Step 6: Publish
       - name: Publish to npm
         run: npm publish
         env:
