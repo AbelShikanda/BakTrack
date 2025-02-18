@@ -40,11 +40,14 @@ jobs:
 
       # Step 6: Push version tags and commits back to GitHub
       - name: Push changes
-        uses: ad-m/github-push-action@v0.8.0
+        uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GH_TOKEN }}
-          github_url: https://github.com
+          github_url: https://abelshikanda:${{ secrets.GH_TOKEN }}@github.com/AbelShikanda/BakTrack.git
           directory: .
+        env:
+          NPM_CONFIG_USERCONFIG: /home/runner/work/_temp/.npmrc
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Step 6: Publish
       - name: Publish to npm
