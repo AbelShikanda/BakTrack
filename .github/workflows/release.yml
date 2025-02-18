@@ -43,6 +43,8 @@ jobs:
         uses: ad-m/github-push-action@v0.8.0
         with:
           github_token: ${{ secrets.GH_TOKEN }}
+          github_url: https://github.com
+          directory: .
 
       # Step 6: Publish
       - name: Publish to npm
