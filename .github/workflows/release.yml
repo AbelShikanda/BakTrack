@@ -31,7 +31,7 @@ jobs:
       - name: Set up Git identity
         run: |
           git remote set-url origin https://abelshikanda:${{ secrets.GH_TOKEN }}@github.com/AbelShikanda/BakTrack.git
-          git config --global user.name "abelshikanda"
+          git config --global user.name "abel"
           git config --global user.email "abelshikanda3@gmail.com"
 
       # Step 5: Run standard-version to bump version and create changelog
