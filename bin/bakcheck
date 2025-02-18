@@ -9,19 +9,21 @@ if [[ -z "$CHECK_DIR" || "$CHECK_DIR" == "/" ]]; then
     exit 1
 fi
 
-echo "CHECK_DIR is set to: $CHECK_DIR"
+echo "Checking: $CHECK_DIR"
 
 # Read backup destination from .bak/.bakconfig
 if [ -f "$CHECK_DIR/.bak/.bakconfig" ]; then
     source "$CHECK_DIR/.bak/.bakconfig"
 else
-    echo "Error: No .bak/.bakconfig found! Run 'backup init' first."
+    echo "No configuration file found!"
+    echo "Run: bak init"
     exit 1
 fi
 
 # Check if backup destination exists
 if [ ! -d "$BACKUP_DEST" ]; then
-    echo "Error: Backup destination does not exist!"
+    echo "Backup destination does not exist!"
+    echo "Run: bak config set mount </path/to/mount>"
     exit 1
 fi
 
@@ -32,7 +34,7 @@ if [ -f "$CHECK_DIR/.bakignore" ]; then
 fi
 
 # Show differences between local and backup with structured output
-echo -e "\nComparing: $CHECK_DIR ↔ $BACKUP_DEST\n"
+echo -e "\nSource: \"$(basename "$CHECK_DIR")\" ↔ Destination: \"$(basename "$BACKUP_DEST")\"\n"
 
 rsync -rcn --delete --itemize-changes $EXCLUDE_OPTION "$CHECK_DIR/" "$BACKUP_DEST/" | awk '
     /^deleting / {print "\033[31m[DELETED] " substr($0,10) "\033[0m"; next}  

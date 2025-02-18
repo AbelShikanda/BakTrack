@@ -16,7 +16,7 @@ BAKIGNORE_FILE="$INIT_DIR/.bakignore"
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "DEVICE_LABEL=\"\"" > "$CONFIG_FILE"
     echo "MOUNT_POINT=\"\"" >> "$CONFIG_FILE"
-    echo "BACKUP_DEST=\"/path/to/backup\"" >> "$CONFIG_FILE"
+    echo "BACKUP_DEST=\"/path\"" >> "$CONFIG_FILE"
     echo "BACKUP_USER=\"\"" >> "$CONFIG_FILE"
 fi
 
@@ -35,4 +35,5 @@ usr/share/*
 EOL
 fi
 
-echo "Initialization complete. Configuration files created. run bak config -h to configure"
+echo "Initialization complete successfully."
+echo "Run: bak config -h to configure"

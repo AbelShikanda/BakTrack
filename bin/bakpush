@@ -7,12 +7,17 @@ SOURCE_DIR=$(pwd)
 if [ -f "$SOURCE_DIR/.bak/.bakconfig" ]; then
     source "$SOURCE_DIR/.bak/.bakconfig"
 else
-    echo "Error: No .bak/.bakconfig found! Run 'backup init' first."
+    echo "There is no configuration file."
+    echo "Run: backup init"
     exit 1
 fi
 
-# Ensure destination exists
-mkdir -p "$BACKUP_DEST"
+# Ensure backup destination is set
+if [ -z "$BACKUP_DEST" ] || [ "$BACKUP_DEST" == "/path" ]; then
+    echo "Backup destination is not set."
+    echo "Run: bak config create backup"
+    exit 1
+fi
 
 # Read backup user from .backupuser (Local first, then Global)
 if [ -f "$SOURCE_DIR/.bak/.bakconfig" ]; then
@@ -20,13 +25,15 @@ if [ -f "$SOURCE_DIR/.bak/.bakconfig" ]; then
 elif [ -f ~/.backupuser ]; then
     source ~/.backupuser
 else
-    echo "Error: No backup user set! Run 'bakconfig <username>' first."
+    echo "No backupuser set"
+    echo "Run: bak config user <name>"
     exit 1
 fi
 
 # Ensure backup user is set
 if [ -z "$BACKUP_USER" ]; then
-    echo "Error: Backup user is empty. Please set a user using 'bakconfig <username>'."
+    echo "Please set a backupuser"
+    echo "Run: bak config user <name>"
     exit 1
 fi
 
@@ -37,8 +44,12 @@ LOG_FILE=$SOURCE_DIR/backup.log
 touch "$LOG_FILE"
 
 # Dry run first
-echo "Running dry run..."
-rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/"
+# echo "Running dry run..."
+# rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/"
+
+echo "Preparing to backup..."
+TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" | grep "total size is" | awk '{print $4, $5}')
+echo "Estimated backup size: $TOTAL_SIZE"
 
 # Confirm before actual push
 read -p "Proceed with backup? (y/N): " confirm
@@ -51,7 +62,7 @@ if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
     echo "-------------------------------------" | tee -a "$LOG_FILE"
     # Run rsync and format output
     sudo -u "$BACKUP_USER" rsync -av --delete --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" 2>&1 | tee -a "$LOG_FILE"
-    echo "Backup completed: $SOURCE_DIR → $BACKUP_DEST (User: $BACKUP_USER)"
+    echo "Backup completed Successfully"
     # Log completion time
     echo -e "-------------------------------------" | tee -a "$LOG_FILE"
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Backup Completed" | tee -a "$LOG_FILE"
