@@ -8,14 +8,14 @@ if [ -f "$SOURCE_DIR/.bak/.bakconfig" ]; then
     source "$SOURCE_DIR/.bak/.bakconfig"
 else
     echo "There is no configuration file."
-    echo "Run: backup init"
+    echo "Run: bak init"
     exit 1
 fi
 
 # Ensure backup destination is set
 if [ -z "$BACKUP_DEST" ] || [ "$BACKUP_DEST" == "/path" ]; then
     echo "Backup destination is not set."
-    echo "Run: bak config create backup"
+    echo "Run: bak config set mount </path>"
     exit 1
 fi
 

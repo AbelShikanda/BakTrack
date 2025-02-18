@@ -101,92 +101,48 @@ check_mount_point() {
 
 # Command Handling
 case "$1" in
-    config)
+    remove)
+        remove_backup_user
+        ;;
+    list)
+        list_backup_user
+        ;;
+    show)
+        [[ -f "$CONFIG_FILE" ]] && cat "$CONFIG_FILE" || echo "No configuration found."
+        ;;
+    set)
+        if [[ -z "$3" || -z "$4" ]]; then
+            echo "run bak config -h"
+            echo "run bak config --help"
+            exit 1
+        fi
         case "$2" in
-            remove)
-                remove_backup_user
-                ;;
-            list)
-                list_backup_user
-                ;;
-            show)
-                [[ -f "$CONFIG_FILE" ]] && cat "$CONFIG_FILE" || echo "No configuration found."
-                ;;
-            set)
-                if [[ -z "$3" || -z "$4" ]]; then
-                    echo "run bak config -h"
-                    echo "run bak config --help"
+            device)
+                # Ensure mount point is set before setting device label
+                if [ -z "$MOUNT_POINT" ]; then
+                    echo "Mount point is not set."
+                    echo "Run: bak config set mount </path/to/mount>"
                     exit 1
                 fi
-                case "$3" in
-                    device)
-                        # Ensure mount point is set before setting device label
-                        if [ -z "$MOUNT_POINT" ]; then
-                            echo "Mount point is not set."
-                            echo "Run: bak config set mount </path/to/mount>"
-                            exit 1
-                        fi
-                        check_mount_point
+                check_mount_point
 
-                        # Check if the device name is actually a mounted device
-                        DEVICE_NAME="$4"
-                        if ! mount | grep -q "$DEVICE_NAME"; then
-                            echo "There is no device with the name '$DEVICE_NAME' mounted."
-                            echo "Check the name of your device and try again"
-                            echo "Try opening the device to mount it"
-                            exit 1
-                        fi
-
-                        # If the device name is valid, update the device label
-                        sed -i "s|^DEVICE_LABEL=.*|DEVICE_LABEL=\"$DEVICE_NAME\"|" "$CONFIG_FILE"
-                        echo "Device detected successfully"
-                        echo "Device label set to $DEVICE_NAME"
-                        ;;
-                    mount)
-                        sed -i "s|^MOUNT_POINT=.*|MOUNT_POINT=\"$5\"|" "$CONFIG_FILE"
-                        echo "Updated mount point to $5"
-                        ;;
-                    *)
-                        echo "run bak config -h"
-                        echo "run bak config --help"
-                        exit 1
-                        ;;
-                esac
-                ;;
-            create)
-                if [[ "$3" == "backup" ]]; then
-                    if [ -z "$MOUNT_POINT" ]; then
-                        echo "Mount point is not set."
-                        echo "Run: bak config set mount <path>"
-                        exit 1
-                    fi
-                    if [ -z "$DEVICE_LABEL" ]; then
-                        echo "Device label is not set."
-                        echo "Run: bak config set device <label>"
-                        exit 1
-                    fi
-                    if [ -z "$BACKUP_USER" ]; then
-                        echo "Backup user is not set."
-                        echo "Run: bak config user <username>"
-                        exit 1
-                    fi
-                    EXPECTED_DEVICE=$(lsblk -no LABEL,MOUNTPOINT | awk -v label="$DEVICE_LABEL" '$1 == label {print $2}')
-                    if [ -z "$EXPECTED_DEVICE" ] || [[ "$EXPECTED_DEVICE" != "$MOUNT_POINT"* ]]; then
-                        echo "The expected backup device ($DEVICE_LABEL) is not mounted."
-                        echo "Insert your device and try again."
-                        exit 1
-                    fi
-                    BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$(basename "$INIT_DIR")"
-                    sed -i "s|^BACKUP_DEST=.*|BACKUP_DEST=\"$BACKUP_PATH\"|" "$CONFIG_FILE"
-                    mkdir -p "$BACKUP_PATH"
-                    echo "Backup structure initialized"
-                else
-                    echo "Invalid create command. try: bak config create backup"
+                # Check if the device name is actually a mounted device
+                DEVICE_NAME="$4"
+                if ! mount | grep -q "$DEVICE_NAME"; then
+                    echo "There is no device with the name '$DEVICE_NAME' mounted."
+                    echo "Check the name of your device and try again"
+                    echo "Try opening the device to mount it"
                     exit 1
                 fi
+
+                # If the device name is valid, update the device label
+                sed -i "s|^DEVICE_LABEL=.*|DEVICE_LABEL=\"$DEVICE_NAME\"|" "$CONFIG_FILE"
+                echo "Device detected successfully"
+                echo "Device label set to $DEVICE_NAME"
                 ;;
-            user)
-                update_backup_user "$2" "$3"
+            mount)
+                sed -i "s|^MOUNT_POINT=.*|MOUNT_POINT=\"$5\"|" "$CONFIG_FILE"
+                echo "Updated mount point to $5"
                 ;;
             *)
                 echo "run bak config -h"
@@ -194,6 +150,46 @@ case "$1" in
                 exit 1
                 ;;
         esac
+        ;;
+    create)
+        if [[ "$3" == "backup" ]]; then
+            if [ -z "$MOUNT_POINT" ]; then
+                echo "Mount point is not set."
+                echo "Run: bak config set mount <path>"
+                exit 1
+            fi
+            if [ -z "$DEVICE_LABEL" ]; then
+                echo "Device label is not set."
+                echo "Run: bak config set device <label>"
+                exit 1
+            fi
+            if [ -z "$BACKUP_USER" ]; then
+                echo "Backup user is not set."
+                echo "Run: bak config user <username>"
+                exit 1
+            fi
+            EXPECTED_DEVICE=$(lsblk -no LABEL,MOUNTPOINT | awk -v label="$DEVICE_LABEL" '$1 == label {print $2}')
+            if [ -z "$EXPECTED_DEVICE" ] || [[ "$EXPECTED_DEVICE" != "$MOUNT_POINT"* ]]; then
+                echo "The expected backup device ($DEVICE_LABEL) is not mounted."
+                echo "Insert your device and try again."
+                exit 1
+            fi
+            BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$(basename "$INIT_DIR")"
+            sed -i "s|^BACKUP_DEST=.*|BACKUP_DEST=\"$BACKUP_PATH\"|" "$CONFIG_FILE"
+            mkdir -p "$BACKUP_PATH"
+            echo "Backup structure initialized"
+        else
+            echo "Invalid create command. try: bak config create backup"
+            exit 1
+        fi
+        ;;
+    user)
+        update_backup_user "$2" "$3"
+        ;;
+    *)
+        echo "run bak config -h"
+        echo "run bak config --help"
+        exit 1
         ;;
     *)
         echo "Invalid command. Use: bak config <command> [arguments]"
