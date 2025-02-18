@@ -1,0 +1,9 @@
+node_modules/
+vendor/
+.env
+storage/logs/
+tmp/
+.DS_Store
+.idea/
+usr/share/*
+/usr/share/*

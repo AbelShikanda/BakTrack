@@ -67,7 +67,13 @@ update_backup_user() {
         exit 1
     fi
 
-    local USERNAME="$1"
+    if [[ -z "$2" ]]; then
+        echo "Error: Missing username."
+        echo "Usage: bak config user <username>"
+        exit 1
+    fi
+
+    local USERNAME="$2"
     sed -i '/^BACKUP_USER=/d' "$CONFIG_FILE"
     echo "BACKUP_USER=$USERNAME" >> "$CONFIG_FILE"
     echo "User set in $CONFIG_FILE"
@@ -111,7 +117,7 @@ case "$1" in
         [[ -f "$CONFIG_FILE" ]] && cat "$CONFIG_FILE" || echo "No configuration found."
         ;;
     set)
-        if [[ -z "$3" || -z "$4" ]]; then
+        if [[ -z "$2" || -z "$3" ]]; then
             echo "run bak config -h"
             echo "run bak config --help"
             exit 1
@@ -127,7 +133,7 @@ case "$1" in
                 check_mount_point
 
                 # Check if the device name is actually a mounted device
-                DEVICE_NAME="$4"
+                DEVICE_NAME="$3"
                 if ! mount | grep -q "$DEVICE_NAME"; then
                     echo "There is no device with the name '$DEVICE_NAME' mounted."
                     echo "Check the name of your device and try again"
@@ -141,8 +147,8 @@ case "$1" in
                 echo "Device label set to $DEVICE_NAME"
                 ;;
             mount)
-                sed -i "s|^MOUNT_POINT=.*|MOUNT_POINT=\"$5\"|" "$CONFIG_FILE"
-                echo "Updated mount point to $5"
+                sed -i "s|^MOUNT_POINT=.*|MOUNT_POINT=\"$3\"|" "$CONFIG_FILE"
+                echo "Updated mount point to $3"
                 ;;
             *)
                 echo "run bak config -h"
@@ -150,9 +156,18 @@ case "$1" in
                 exit 1
                 ;;
         esac
+        echo "Updated $2 to $3"
         ;;
     create)
-        if [[ "$3" == "backup" ]]; then
+        if [[ -z "$2" ]]; then
+            echo "Error: Missing argument for 'create' command."
+            echo "Usage: bak config create backup"
+            exit 1
+        elif [[ "$2" != "backup" ]]; then
+            echo "Invalid create command. Try: bak config create backup"
+            exit 1
+        else
+            # Logic for creating backup
             if [ -z "$MOUNT_POINT" ]; then
                 echo "Mount point is not set."
                 echo "Run: bak config set mount <path>"
@@ -178,18 +193,10 @@ case "$1" in
             sed -i "s|^BACKUP_DEST=.*|BACKUP_DEST=\"$BACKUP_PATH\"|" "$CONFIG_FILE"
             mkdir -p "$BACKUP_PATH"
             echo "Backup structure initialized"
-        else
-            echo "Invalid create command. try: bak config create backup"
-            exit 1
         fi
         ;;
     user)
-        update_backup_user "$2" "$3"
-        ;;
-    *)
-        echo "run bak config -h"
-        echo "run bak config --help"
-        exit 1
+        update_backup_user "$@"
         ;;
     *)
         echo "Invalid command. Use: bak config <command> [arguments]"
