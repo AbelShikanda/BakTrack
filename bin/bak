@@ -8,10 +8,11 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Usage: bak {push|pull|check|config}"
     echo
     echo "Commands:"
-    echo "  track      - Pushes data to the backup location"
-    echo "  restore      - Retrieves data from the backup location"
-    echo "  check     - Checks the backup status"
-    echo "  config    - Manage backup configurations (run 'bak config -h' for more info)"
+    echo "  track           - Pushes data to the backup location"
+    echo "  restore         - Retrieves data from the backup location that are not in the source"
+    echo "  restore -lost   - Retrieves data once source files are all lost"
+    echo "  check           - Checks the backup status"
+    echo "  config          - Manage backup configurations (run 'bak config -h' for more info)"
     exit 0
 fi
 
@@ -20,7 +21,12 @@ case "$1" in
     "$SCRIPT_DIR/bakpush"
     ;;
   restore)
-    "$SCRIPT_DIR/bakpull"
+    if [[ "$2" == "-lost" ]]; then
+        shift
+        "$SCRIPT_DIR/bakrestore" "$@"
+    else
+        "$SCRIPT_DIR/bakpull"
+    fi
     ;;
   check)
     "$SCRIPT_DIR/bakcheck"

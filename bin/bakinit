@@ -33,6 +33,7 @@ tmp/
 usr/share/*
 /usr/share/*
 backup.log
+restore.log
 EOL
 fi
 

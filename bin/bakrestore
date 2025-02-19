@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# Validate command usage
+if [[ "$1" != "-lost" || -z "$2" ]]; then
+    echo "Usage: bak restore -lost <path/to/your/backup>"
+    exit 1
+fi
+
+# Use provided path or detect dynamically
+shift
+BACKUP_PATH="$*"
+
+# If BACKUP_PATH is not a valid directory, try resolving dynamically
+if [[ ! -d "$BACKUP_PATH" ]]; then
+    DEVICE_LABEL="$BACKUP_PATH"
+    MOUNT_POINT=$(findmnt -rno TARGET -S LABEL="$DEVICE_LABEL")
+
+    # Convert \x20 to actual spaces
+    BACKUP_PATH=$(echo "$MOUNT_POINT" | sed 's/\\x20/ /g')
+
+    if [[ -z "$BACKUP_PATH" ]]; then
+        echo "Error: Unable to detect mount point for label '$DEVICE_LABEL'."
+        exit 1
+    fi
+fi
+
+# Debug output
+echo "Checking backup path: '$BACKUP_PATH'"
+
+# Verify if backup path exists
+if [[ ! -d "$BACKUP_PATH/.bak" ]]; then
+    echo "Error: No valid backup found in '$BACKUP_PATH'."
+    exit 1
+fi
+
+# Ensure the backup has a valid configuration
+if [[ ! -f "$BACKUP_PATH/.bak/.bakconfig" ]]; then
+    echo "Error: No .bakconfig found in the backup path."
+    exit 1
+fi
+
+# Load configuration from the backup
+source "$BACKUP_PATH/.bak/.bakconfig"
+
+# Get the original directory name from BACKUP_DEST
+EXPECTED_DIR=$(basename "$BACKUP_DEST")
+
+# Get current working directory name
+CURRENT_DIR=$(basename "$(pwd)")
+
+# Ensure the current directory matches the original backup directory name
+if [[ "$CURRENT_DIR" != "$EXPECTED_DIR" ]]; then
+    echo "Error: Current directory ($CURRENT_DIR) does not match the backup directory name ($EXPECTED_DIR)."
+    echo "Move to a directory named '$EXPECTED_DIR' and retry."
+    exit 1
+fi
+
+echo "Restoring files from backup: $BACKUP_PATH"
+
+# Restore .bak and .bakignore first
+echo "Restoring backup metadata..."
+mkdir -p ".bak"
+[[ -d "$BACKUP_PATH/.bak" ]] && rsync -av "$BACKUP_PATH/.bak/" ".bak/" &>/dev/null
+[[ -f "$BACKUP_PATH/.bakignore" ]] && rsync -av "$BACKUP_PATH/.bakignore" ".bakignore" &>/dev/null
+echo "Configuration files retrieved"
+
+# Restore files (excluding .bak and .bakignore)
+echo "Preparing to restore..."
+TOTAL_SIZE=$(rsync -av --no-perms --dry-run --omit-dir-times "$BACKUP_PATH/" "./" --exclude ".bak" --exclude ".bakignore" | grep "total size is" | awk '{print $4, $5}')
+echo "Estimated backup size: $TOTAL_SIZE"
+
+# Ask for confirmation before restoring
+read -p "Proceed with restore? (y/N): " confirm
+if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+    # Log start time
+    echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Restore Started"
+    echo "-------------------------------------"
+    # sudo -u "$BACKUP_USER" rsync -av "$BACKUP_DEST/" "$TARGET_DIR/" 2>&1 | tee -a "$LOG_FILE"
+    sudo -u "$BACKUP_USER" rsync -av --no-perms --omit-dir-times "$BACKUP_PATH/" "./" --exclude ".bak" --exclude ".bakignore" &>/dev/null
+    echo "-------------------------------------"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Restore Completed"
+else
+    echo "Restore canceled."
+fi
+echo "✔ Restore completed successfully!"

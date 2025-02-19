@@ -7,8 +7,9 @@ TARGET_DIR=$(pwd)
 if [ -f "$TARGET_DIR/.bak/.bakconfig" ]; then
     source "$TARGET_DIR/.bak/.bakconfig"
 else
-    echo "No configuration file found!"
-    echo "Run: backup init"
+    echo "It seems like your source files no longer exist or are corrupted"
+    echo "to retrieve all your files"
+    echo "Run: bak restore -lost"
     exit 1
 fi
 
@@ -23,7 +24,7 @@ fi
 LOG_FILE=~/BackupVersionControl/restore.log
 
 echo "Preparing to restore..."
-TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" | grep "total size is" | awk '{print $4, $5}')
+TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$BACKUP_DEST/.bakignore" "$BACKUP_DEST/" "$TARGET_DIR/" | grep "total size is" | awk '{print $4, $5}')
 echo "Estimated backup size: $TOTAL_SIZE"
 
 # Ask for confirmation before restoring
