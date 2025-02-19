@@ -186,7 +186,30 @@ case "$1" in
                 echo "Error: The expected backup device ($DEVICE_LABEL) is not mounted at $MOUNT_POINT."
                 exit 1
             fi
-            BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$(basename "$INIT_DIR")"
+            # Prompt the user for a custom path (if -dest is provided)
+            if [[ "$3" == "-dest" && -n "$4" ]]; then
+                CUSTOM_PATH="$4"
+                echo "🔍 Searching for existing directories matching: '$CUSTOM_PATH' inside '$MOUNT_POINT/$DEVICE_LABEL'"
+
+                # Search for directories with case-insensitive matching, avoiding hidden/system folders
+                MATCHING_DIR=$(find "$MOUNT_POINT/$DEVICE_LABEL" -mindepth 1 -maxdepth 3 -type d -iname "$CUSTOM_PATH*" ! -path "*/.*" | head -n 1)
+
+                # Debugging: Show all matches found
+                echo "📌 Matching directories found:"
+                find "$MOUNT_POINT/$DEVICE_LABEL" -mindepth 1 -maxdepth 3 -type d -iname "$CUSTOM_PATH*" ! -path "*/.*"
+
+                if [[ -n "$MATCHING_DIR" ]]; then
+                    BACKUP_PATH="$MATCHING_DIR/$(basename "$INIT_DIR")"
+                    echo "✔ Found existing directory: $MATCHING_DIR"
+                else
+                    BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$CUSTOM_PATH/$(basename "$INIT_DIR")"
+                    echo "❌ No existing directory found. Creating new one: $BACKUP_PATH"
+                fi
+            else
+                BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$(basename "$INIT_DIR")"
+                echo "Using default backup path: $BACKUP_PATH"
+            fi
+            # BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$(basename "$INIT_DIR")"
             mkdir -p "$BACKUP_PATH"
             sed -i "s|^BACKUP_DEST=.*|BACKUP_DEST=\"$BACKUP_PATH\"|" "$CONFIG_FILE"
             rsync -av "$BAK_DIR/" "$BACKUP_PATH/.bak/" &>/dev/null
