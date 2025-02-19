@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## 1.2.0 (2025-02-19)
+
+
+### Features
+
+* **config:** improved configuration for creation for a backup ([204ac3e](https://github.com/AbelShikanda/BakTrack/commit/204ac3e644a9e821e2c562f282c876ce16bb8702))
+
 ## 1.1.0 (2025-02-18)
 
 
