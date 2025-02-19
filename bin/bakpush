@@ -43,10 +43,6 @@ LOG_FILE=$SOURCE_DIR/backup.log
 # Ensure log file exists (optional, for logging clarity)
 touch "$LOG_FILE"
 
-# Dry run first
-# echo "Running dry run..."
-# rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/"
-
 echo "Preparing to backup..."
 TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" | grep "total size is" | awk '{print $4, $5}')
 echo "Estimated backup size: $TOTAL_SIZE"

@@ -22,10 +22,9 @@ fi
 # Log file path
 LOG_FILE=~/BackupVersionControl/restore.log
 
-# Perform dry run
-echo "Running dry run..."
-# rsync -av --dry-run "$BACKUP_DEST/" "$TARGET_DIR/"
-rsync -av --dry-run --no-perms --omit-dir-times "$BACKUP_DEST/" "$TARGET_DIR/"
+echo "Preparing to restore..."
+TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" | grep "total size is" | awk '{print $4, $5}')
+echo "Estimated backup size: $TOTAL_SIZE"
 
 # Ask for confirmation before restoring
 read -p "Proceed with restore? (y/N): " confirm

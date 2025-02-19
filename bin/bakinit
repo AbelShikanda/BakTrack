@@ -32,6 +32,7 @@ tmp/
 .idea/
 usr/share/*
 /usr/share/*
+backup.log
 EOL
 fi
 

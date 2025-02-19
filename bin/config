@@ -131,7 +131,6 @@ case "$1" in
                     exit 1
                 fi
                 check_mount_point
-
                 # Check if the device name is actually a mounted device
                 DEVICE_NAME="$3"
                 if ! mount | grep -q "$DEVICE_NAME"; then
@@ -140,7 +139,6 @@ case "$1" in
                     echo "Try opening the device to mount it"
                     exit 1
                 fi
-
                 # If the device name is valid, update the device label
                 sed -i "s|^DEVICE_LABEL=.*|DEVICE_LABEL=\"$DEVICE_NAME\"|" "$CONFIG_FILE"
                 echo "Device detected successfully"
@@ -183,15 +181,19 @@ case "$1" in
                 echo "Run: bak config user <username>"
                 exit 1
             fi
-            EXPECTED_DEVICE=$(lsblk -no LABEL,MOUNTPOINT | awk -v label="$DEVICE_LABEL" '$1 == label {print $2}')
+            EXPECTED_DEVICE=$(findmnt -rno TARGET -S LABEL="$DEVICE_LABEL" | sed 's/\\x20/ /g')
             if [ -z "$EXPECTED_DEVICE" ] || [[ "$EXPECTED_DEVICE" != "$MOUNT_POINT"* ]]; then
-                echo "The expected backup device ($DEVICE_LABEL) is not mounted."
-                echo "Insert your device and try again."
+                echo "Error: The expected backup device ($DEVICE_LABEL) is not mounted at $MOUNT_POINT."
                 exit 1
             fi
             BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$(basename "$INIT_DIR")"
-            sed -i "s|^BACKUP_DEST=.*|BACKUP_DEST=\"$BACKUP_PATH\"|" "$CONFIG_FILE"
             mkdir -p "$BACKUP_PATH"
+            sed -i "s|^BACKUP_DEST=.*|BACKUP_DEST=\"$BACKUP_PATH\"|" "$CONFIG_FILE"
+            rsync -av "$BAK_DIR/" "$BACKUP_PATH/.bak/" &>/dev/null
+            echo "creating backup ..."
+            rsync -av "$INIT_DIR/.bakignore" "$BACKUP_PATH/.bakignore" &>/dev/null
+            echo "creating configuration files ..."
+            rsync -av "$CONFIG_FILE" "$DEST_CONFIG_FILE" &>/dev/null
             echo "Backup structure initialized"
         fi
         ;;
