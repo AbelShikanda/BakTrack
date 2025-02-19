@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## 1.4.0 (2025-02-19)
+
+
+### Features
+
+* added a new feature to restore all lost files with a lost flag(restore -lost) ([052c2d8](https://github.com/AbelShikanda/BakTrack/commit/052c2d8a14fcab64f262bda9f4df743914c757ee))
+
 ## 1.3.0 (2025-02-19)
 
 
