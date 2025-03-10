@@ -1,11 +1,20 @@
 #!/bin/bash
 
-# Get the absolute path of the script
+# Get the absolute path of the script's directory
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
-# Read the version from package.json
-VERSION=$(grep '"version":' "$SCRIPT_DIR/package.json" | awk -F '"' '{print $4}')
+# Get the parent directory
+PARENT_DIR=$(dirname "$SCRIPT_DIR")
 
+# Default version (if no file exists)
+DEFAULT_VERSION="unknown"
+
+# Try to read the version from package.json in the parent directory
+if [[ -f "$PARENT_DIR/package.json" ]]; then
+    VERSION=$(grep '"version":' "$PARENT_DIR/package.json" | awk -F '"' '{print $4}')
+else
+    VERSION=$DEFAULT_VERSION
+fi
 
 # Version command for bak
 if [[ "$1" == "-v" || "$1" == "--V" || "$1" == "--version" ]]; then
