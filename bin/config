@@ -12,10 +12,10 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Configuration Commands:"
     echo "  bak config set mount <path>     - Set the mount point (e.g., /media/backup)"
     echo "  bak config set device <label>   - Set the device label (e.g., MyBackupDriveName)"
+    echo "  bak config user <username>      - Set a new backup user"
     echo "  bak config create backup        - Automatically create backup destination"
     echo "  bak config list                 - List the current backup user"
     echo "  bak config remove               - Remove the backup user"
-    echo "  bak config user <username>      - Set a new backup user"
     echo "  bak config show                 - Show the current configuration"
     exit 0
 fi

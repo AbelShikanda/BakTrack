@@ -3,6 +3,16 @@
 # Get the absolute path of the script
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
+# Read the version from package.json
+VERSION=$(grep '"version":' "$SCRIPT_DIR/package.json" | awk -F '"' '{print $4}')
+
+
+# Version command for bak
+if [[ "$1" == "-v" || "$1" == "--V" || "$1" == "--version" ]]; then
+    echo "bak v$VERSION"
+    exit 0
+fi
+
 # Help function for bak
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Usage: bak {push|pull|check|config}"
