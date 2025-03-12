@@ -12,8 +12,9 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Configuration Commands:"
     echo "  bak config set mount <path>     - Set the mount point (e.g., /media/backup)"
     echo "  bak config set device <label>   - Set the device label (e.g., MyBackupDriveName)"
-    echo "  bak config user <username>      - Set a new backup user"
+    echo "  bak config set user.name        - Set the device label (e.g., MyBackupDriveName)"
     echo "  bak config create backup        - Automatically create backup destination"
+    echo "  bak config create backup -dest  - set custom destination location"
     echo "  bak config list                 - List the current backup user"
     echo "  bak config remove               - Remove the backup user"
     echo "  bak config show                 - Show the current configuration"
@@ -62,18 +63,13 @@ list_backup_user() {
 
 # Function to update backup user
 update_backup_user() {
-    if [[ "$1" != "user" ]]; then
-        echo "Usage: bak config user <username>"
-        exit 1
-    fi
-
-    if [[ -z "$2" ]]; then
+    if [[ -z "$3" ]]; then
         echo "Error: Missing username."
         echo "Usage: bak config user <username>"
         exit 1
     fi
 
-    local USERNAME="$2"
+    local USERNAME="$3"
     sed -i '/^BACKUP_USER=/d' "$CONFIG_FILE"
     echo "BACKUP_USER=$USERNAME" >> "$CONFIG_FILE"
     echo "User set in $CONFIG_FILE"
@@ -105,6 +101,39 @@ check_mount_point() {
     fi
 }
 
+# function to set device name
+set_device_name() {
+    # Check if the device name is actually a mounted device
+    DEVICE_NAME="$3"
+    if ! mount | grep -q "$DEVICE_NAME"; then
+        echo "There is no device with the name '$DEVICE_NAME' mounted."
+        echo "Check the name of your device and try again"
+        echo "Try opening the device to mount it"
+        exit 1
+    fi
+    sed -i "s|^DEVICE_LABEL=.*|DEVICE_LABEL=\"$DEVICE_NAME\"|" "$CONFIG_FILE"
+    echo "Device detected successfully"
+    echo "Device label set to $DEVICE_NAME"
+}
+
+# function to set mount point
+set_mount_point() {
+    sed -i "s|^MOUNT_POINT=.*|MOUNT_POINT=\"$3\"|" "$CONFIG_FILE"
+    echo "Updated mount point to $3"
+}
+
+# fuction to create backup destination 
+create_backup_dest() {
+    mkdir -p "$BACKUP_PATH"
+    sed -i "s|^BACKUP_DEST=.*|BACKUP_DEST=\"$BACKUP_PATH\"|" "$CONFIG_FILE"
+    rsync -av "$BAK_DIR/" "$BACKUP_PATH/.bak/" &>/dev/null
+    echo "creating backup ..."
+    rsync -av "$INIT_DIR/.bakignore" "$BACKUP_PATH/.bakignore" &>/dev/null
+    echo "creating configuration files ..."
+    rsync -av "$CONFIG_FILE" "$DEST_CONFIG_FILE" &>/dev/null
+    echo "Backup structure initialized"
+}
+
 # Command Handling
 case "$1" in
     remove)
@@ -117,40 +146,40 @@ case "$1" in
         [[ -f "$CONFIG_FILE" ]] && cat "$CONFIG_FILE" || echo "No configuration found."
         ;;
     set)
-        if [[ -z "$2" || -z "$3" ]]; then
+        if [[ -z "$2" ]]; then
+            echo "you have not set anything yet"
             echo "run bak config -h"
-            echo "run bak config --help"
             exit 1
         fi
         case "$2" in
+            user.name)
+                update_backup_user "$@"
+                ;;
+            mount)
+                if [[ -z "$3" ]]; then
+                    echo "Error: Missing Mount Point."
+                    echo "Usage: bak config set mount <path/to/mount/point>"
+                    exit 1
+                fi
+                set_mount_point "$@"
+                ;;
             device)
-                # Ensure mount point is set before setting device label
+                if [[ -z "$3" ]]; then
+                    echo "Error: Missing device."
+                    echo "Usage: bak config set device <devicename>"
+                    exit 1
+                fi
                 if [ -z "$MOUNT_POINT" ]; then
                     echo "Mount point is not set."
                     echo "Run: bak config set mount </path/to/mount>"
                     exit 1
                 fi
                 check_mount_point
-                # Check if the device name is actually a mounted device
-                DEVICE_NAME="$3"
-                if ! mount | grep -q "$DEVICE_NAME"; then
-                    echo "There is no device with the name '$DEVICE_NAME' mounted."
-                    echo "Check the name of your device and try again"
-                    echo "Try opening the device to mount it"
-                    exit 1
-                fi
-                # If the device name is valid, update the device label
-                sed -i "s|^DEVICE_LABEL=.*|DEVICE_LABEL=\"$DEVICE_NAME\"|" "$CONFIG_FILE"
-                echo "Device detected successfully"
-                echo "Device label set to $DEVICE_NAME"
-                ;;
-            mount)
-                sed -i "s|^MOUNT_POINT=.*|MOUNT_POINT=\"$3\"|" "$CONFIG_FILE"
-                echo "Updated mount point to $3"
+                set_device_name "$@"
                 ;;
             *)
+                echo "need help setting up?"
                 echo "run bak config -h"
-                echo "run bak config --help"
                 exit 1
                 ;;
         esac
@@ -165,7 +194,6 @@ case "$1" in
             echo "Invalid create command. Try: bak config create backup"
             exit 1
         else
-            # Logic for creating backup
             if [ -z "$MOUNT_POINT" ]; then
                 echo "Mount point is not set."
                 echo "Run: bak config set mount <path>"
@@ -187,7 +215,12 @@ case "$1" in
                 exit 1
             fi
             # Prompt the user for a custom path (if -dest is provided)
-            if [[ "$3" == "-dest" && -n "$4" ]]; then
+            if [[ "$3" == "-dest" ]]; then
+                if [[ -z "$4" ]]; then
+                    echo "Error: Missing custom destination path."
+                    echo "Usage: bak config create backup -dest <path/to/custom/dest>"
+                    exit 1
+                fi
                 CUSTOM_PATH="$4"
                 echo "🔍 Searching for existing directories matching: '$CUSTOM_PATH' inside '$MOUNT_POINT/$DEVICE_LABEL'"
 
@@ -209,19 +242,8 @@ case "$1" in
                 BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$(basename "$INIT_DIR")"
                 echo "Using default backup path: $BACKUP_PATH"
             fi
-            # BACKUP_PATH="$MOUNT_POINT/$DEVICE_LABEL/$(basename "$INIT_DIR")"
-            mkdir -p "$BACKUP_PATH"
-            sed -i "s|^BACKUP_DEST=.*|BACKUP_DEST=\"$BACKUP_PATH\"|" "$CONFIG_FILE"
-            rsync -av "$BAK_DIR/" "$BACKUP_PATH/.bak/" &>/dev/null
-            echo "creating backup ..."
-            rsync -av "$INIT_DIR/.bakignore" "$BACKUP_PATH/.bakignore" &>/dev/null
-            echo "creating configuration files ..."
-            rsync -av "$CONFIG_FILE" "$DEST_CONFIG_FILE" &>/dev/null
-            echo "Backup structure initialized"
+            create_backup_dest
         fi
-        ;;
-    user)
-        update_backup_user "$@"
         ;;
     *)
         echo "Invalid command. Use: bak config <command> [arguments]"
