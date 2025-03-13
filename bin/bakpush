@@ -43,25 +43,25 @@ LOG_FILE=$SOURCE_DIR/backup.log
 # Ensure log file exists (optional, for logging clarity)
 touch "$LOG_FILE"
 
-echo "Preparing to backup..."
-TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" | grep "total size is" | awk '{print $4, $5}')
-echo "Estimated backup size: $TOTAL_SIZE"
+# echo "Preparing to backup..."
+# TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" | grep "total size is" | awk '{print $4, $5}')
+# echo "Estimated backup size: $TOTAL_SIZE"
 
 # Confirm before actual push
-read -p "Proceed with backup? (y/N): " confirm
-if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+# read -p "Proceed with backup? (y/N): " confirm
+# if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
     # Add timestamp and log header
-    echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Backup Started" | tee -a "$LOG_FILE"
-    echo "Source: $SOURCE_DIR" | tee -a "$LOG_FILE"
-    echo "Destination: $BACKUP_DEST" | tee -a "$LOG_FILE"
-    echo "User: $BACKUP_USER" | tee -a "$LOG_FILE"
-    echo "-------------------------------------" | tee -a "$LOG_FILE"
-    # Run rsync and format output
-    sudo -u "$BACKUP_USER" rsync -av --delete --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" 2>&1 | tee -a "$LOG_FILE"
-    echo "Backup completed Successfully"
-    # Log completion time
-    echo -e "-------------------------------------" | tee -a "$LOG_FILE"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Backup Completed" | tee -a "$LOG_FILE"
-else
-    echo "Backup canceled."
-fi
+echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Backup Started" | tee -a "$LOG_FILE"
+echo "Source: $SOURCE_DIR" | tee -a "$LOG_FILE"
+echo "Destination: $BACKUP_DEST" | tee -a "$LOG_FILE"
+echo "User: $BACKUP_USER" | tee -a "$LOG_FILE"
+echo "-------------------------------------" | tee -a "$LOG_FILE"
+# Run rsync and format output
+sudo -u "$BACKUP_USER" rsync -av --delete --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" 2>&1 | tee -a "$LOG_FILE"
+echo "Backup completed Successfully"
+# Log completion time
+echo -e "-------------------------------------" | tee -a "$LOG_FILE"
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Backup Completed" | tee -a "$LOG_FILE"
+# else
+#     echo "Backup canceled."
+# fi

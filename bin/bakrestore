@@ -65,21 +65,21 @@ mkdir -p ".bak"
 echo "Configuration files retrieved"
 
 # Restore files (excluding .bak and .bakignore)
-echo "Preparing to restore..."
-TOTAL_SIZE=$(rsync -av --no-perms --dry-run --omit-dir-times "$BACKUP_PATH/" "./" --exclude ".bak" --exclude ".bakignore" | grep "total size is" | awk '{print $4, $5}')
-echo "Estimated backup size: $TOTAL_SIZE"
+# echo "Preparing to restore..."
+# TOTAL_SIZE=$(rsync -av --no-perms --dry-run --omit-dir-times "$BACKUP_PATH/" "./" --exclude ".bak" --exclude ".bakignore" | grep "total size is" | awk '{print $4, $5}')
+# echo "Estimated backup size: $TOTAL_SIZE"
 
 # Ask for confirmation before restoring
-read -p "Proceed with restore? (y/N): " confirm
-if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+# read -p "Proceed with restore? (y/N): " confirm
+# if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
     # Log start time
-    echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Restore Started"
-    echo "-------------------------------------"
-    # sudo -u "$BACKUP_USER" rsync -av "$BACKUP_DEST/" "$TARGET_DIR/" 2>&1 | tee -a "$LOG_FILE"
-    sudo -u "$BACKUP_USER" rsync -av --no-perms --omit-dir-times "$BACKUP_PATH/" "./" --exclude ".bak" --exclude ".bakignore" &>/dev/null
-    echo "-------------------------------------"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Restore Completed"
-else
-    echo "Restore canceled."
-fi
+echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Restore Started"
+echo "-------------------------------------"
+# sudo -u "$BACKUP_USER" rsync -av "$BACKUP_DEST/" "$TARGET_DIR/" 2>&1 | tee -a "$LOG_FILE"
+sudo -u "$BACKUP_USER" rsync -av --no-perms --omit-dir-times "$BACKUP_PATH/" "./" --exclude ".bak" --exclude ".bakignore" &>/dev/null
+echo "-------------------------------------"
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Restore Completed"
+# else
+#     echo "Restore canceled."
+# fi
 echo "✔ Restore completed successfully!"

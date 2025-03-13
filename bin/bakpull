@@ -23,26 +23,26 @@ fi
 # Log file path
 LOG_FILE=~/BackupVersionControl/restore.log
 
-echo "Preparing to restore..."
-TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$BACKUP_DEST/.bakignore" "$BACKUP_DEST/" "$TARGET_DIR/" | grep "total size is" | awk '{print $4, $5}')
-echo "Estimated backup size: $TOTAL_SIZE"
+# echo "Preparing to restore..."
+# TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$BACKUP_DEST/.bakignore" "$BACKUP_DEST/" "$TARGET_DIR/" | grep "total size is" | awk '{print $4, $5}')
+# echo "Estimated backup size: $TOTAL_SIZE"
 
 # Ask for confirmation before restoring
-read -p "Proceed with restore? (y/N): " confirm
-if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+# read -p "Proceed with restore? (y/N): " confirm
+# if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
     # Log start time
-    echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Restore Started" | tee -a "$LOG_FILE"
-    echo "Source: $BACKUP_DEST" | tee -a "$LOG_FILE"
-    echo "Destination: $TARGET_DIR" | tee -a "$LOG_FILE"
-    echo "-------------------------------------" | tee -a "$LOG_FILE"
-    
-    # Perform the actual restore
-    # sudo -u "$BACKUP_USER" rsync -av "$BACKUP_DEST/" "$TARGET_DIR/" 2>&1 | tee -a "$LOG_FILE"
-    sudo -u "$BACKUP_USER" rsync -av --no-perms --omit-dir-times "$BACKUP_DEST/" "$TARGET_DIR/" 2>&1 | tee -a "$LOG_FILE"
+echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Restore Started" | tee -a "$LOG_FILE"
+echo "Source: $BACKUP_DEST" | tee -a "$LOG_FILE"
+echo "Destination: $TARGET_DIR" | tee -a "$LOG_FILE"
+echo "-------------------------------------" | tee -a "$LOG_FILE"
 
-    echo "Restore completed: $BACKUP_DEST → $TARGET_DIR" | tee -a "$LOG_FILE"
-    echo "-------------------------------------" | tee -a "$LOG_FILE"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Restore Completed" | tee -a "$LOG_FILE"
-else
-    echo "Restore canceled."
-fi
+# Perform the actual restore
+# sudo -u "$BACKUP_USER" rsync -av "$BACKUP_DEST/" "$TARGET_DIR/" 2>&1 | tee -a "$LOG_FILE"
+sudo -u "$BACKUP_USER" rsync -av --no-perms --omit-dir-times "$BACKUP_DEST/" "$TARGET_DIR/" 2>&1 | tee -a "$LOG_FILE"
+
+echo "Restore completed: $BACKUP_DEST → $TARGET_DIR" | tee -a "$LOG_FILE"
+echo "-------------------------------------" | tee -a "$LOG_FILE"
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Restore Completed" | tee -a "$LOG_FILE"
+# else
+#     echo "Restore canceled."
+# fi
