@@ -51,7 +51,7 @@ CURRENT_DIR=$(basename "$(pwd)")
 # Ensure the current directory matches the original backup directory name
 if [[ "$CURRENT_DIR" != "$EXPECTED_DIR" ]]; then
     echo "Error: Current directory ($CURRENT_DIR) does not match the backup directory name ($EXPECTED_DIR)."
-    echo "Move to a directory named '$EXPECTED_DIR' and retry."
+    echo "Move to/create a directory named '$EXPECTED_DIR' and retry."
     exit 1
 fi
 

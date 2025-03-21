@@ -5,7 +5,7 @@ CHECK_DIR=$(pwd)
 
 # Safety check to prevent scanning system files
 if [[ -z "$CHECK_DIR" || "$CHECK_DIR" == "/" ]]; then
-    echo "Error: CHECK_DIR is not set or is root (/), aborting!"
+    echo "Error: Source directory is not set or is root (/), aborting!"
     exit 1
 fi
 
@@ -14,6 +14,12 @@ echo "Checking: $CHECK_DIR"
 # Read backup destination from .bak/.bakconfig
 if [ -f "$CHECK_DIR/.bak/.bakconfig" ]; then
     source "$CHECK_DIR/.bak/.bakconfig"
+    EXPECTED_DEVICE=$(findmnt -rno TARGET -S LABEL="$DEVICE_LABEL" | sed 's/\\x20/ /g')
+    if [ -z "$EXPECTED_DEVICE" ] || [[ "$EXPECTED_DEVICE" != "$MOUNT_POINT"* ]]; then
+        echo "Error: The expected backup device ($DEVICE_LABEL) is not mounted."
+        echo "please mount and try again."
+        exit 1
+    fi
 else
     echo "No configuration file found!"
     echo "Run: bak init"
@@ -22,7 +28,7 @@ fi
 
 # Check if backup destination exists
 if [ ! -d "$BACKUP_DEST" ]; then
-    echo "Backup destination does not exist!"
+    echo "Backup destination path does not exist!"
     echo "Run: bak config set mount </path/to/mount>"
     exit 1
 fi

@@ -6,6 +6,12 @@ SOURCE_DIR=$(pwd)
 # Read backup destination from .bak/.bakconfig
 if [ -f "$SOURCE_DIR/.bak/.bakconfig" ]; then
     source "$SOURCE_DIR/.bak/.bakconfig"
+    EXPECTED_DEVICE=$(findmnt -rno TARGET -S LABEL="$DEVICE_LABEL" | sed 's/\\x20/ /g')
+    if [ -z "$EXPECTED_DEVICE" ] || [[ "$EXPECTED_DEVICE" != "$MOUNT_POINT"* ]]; then
+        echo "Error: The expected backup device ($DEVICE_LABEL) is not mounted."
+        echo "please mount and try again."
+        exit 1
+    fi
 else
     echo "There is no configuration file."
     echo "Run: bak init"
@@ -43,13 +49,6 @@ LOG_FILE=$SOURCE_DIR/backup.log
 # Ensure log file exists (optional, for logging clarity)
 touch "$LOG_FILE"
 
-# echo "Preparing to backup..."
-# TOTAL_SIZE=$(rsync -av --delete --dry-run --no-perms --exclude-from="$SOURCE_DIR/.bakignore" "$SOURCE_DIR/" "$BACKUP_DEST/" | grep "total size is" | awk '{print $4, $5}')
-# echo "Estimated backup size: $TOTAL_SIZE"
-
-# Confirm before actual push
-# read -p "Proceed with backup? (y/N): " confirm
-# if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
     # Add timestamp and log header
 echo -e "\n$(date '+%Y-%m-%d %H:%M:%S') - Backup Started" | tee -a "$LOG_FILE"
 echo "Source: $SOURCE_DIR" | tee -a "$LOG_FILE"
@@ -62,6 +61,4 @@ echo "Backup completed Successfully"
 # Log completion time
 echo -e "-------------------------------------" | tee -a "$LOG_FILE"
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Backup Completed" | tee -a "$LOG_FILE"
-# else
-#     echo "Backup canceled."
-# fi
+
